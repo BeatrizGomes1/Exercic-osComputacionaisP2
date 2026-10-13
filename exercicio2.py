@@ -1,45 +1,52 @@
 # Exercício Computacional para P2 (2 Questao) - Capítulo 6
 
-taxa_query = 7368 / 1800
+def mva_exato(demandas, n_query, n_update):
+    # demandas[i] = [Query, Update] no dispositivo i
+    estados = {}
+    for q in range(n_query + 1):
+        for u in range(n_update + 1):
+            if q == 0 and u == 0:
+                estados[(0, 0)] = [[0.0, 0.0] for _ in range(3)]
+                continue
 
-d_cpu_up = 0.375
-d_d1_up = 0.480
-d_d2_up = 0.240
+            R = [0.0, 0.0]
+            X = [0.0, 0.0]
+            for c in range(2):
+                qtd = [q, u][c]
+                if qtd > 0:
+                    ant = estados[(q - 1, u)] if c == 0 else estados[(q, u - 1)]
+                    for i in range(3):
+                        R[c] += demandas[i][c] * (1 + ant[i][0] + ant[i][1])
+                    X[c] = qtd / R[c]
 
-def calcular(d1_query, d2_query):
-    d_q = [0.105, d1_query, d2_query]
-    d_u = [d_cpu_up, d_d1_up, d_d2_up]
-    
-    d_efetiva = []
-    for i in range(3):
-        u_q = taxa_query * d_q[i]
-        d_efetiva.append(d_u[i] / (1 - u_q))
-        
-    r_update = sum(d_efetiva)
-    x_update = 1 / r_update
-    
-    fila_u = [x_update * d_efetiva[i] for i in range(3)]
-        
-    r_query = 0.0
-    fila_q = []
-    for i in range(3):
-        u_q = taxa_query * d_q[i]
-        r_dev = (d_q[i] * (1 + fila_u[i])) / (1 - u_q)
-        r_query += r_dev
-        fila_q.append(taxa_query * r_dev)
-        
-    print(f"Tempo de resposta Query: {r_query:.4f} s")
-    print(f"Vazão Query: {taxa_query:.4f} trans/s")
-    print(f"Tempo de resposta Update: {r_update:.4f} s")
-    print(f"Vazão Update: {x_update:.4f} trans/s")
-    
+            fila = [[0.0, 0.0] for _ in range(3)]
+            for i in range(3):
+                for c in range(2):
+                    qtd = [q, u][c]
+                    if qtd > 0:
+                        ant = estados[(q - 1, u)] if c == 0 else estados[(q, u - 1)]
+                        fila[i][c] = X[c] * demandas[i][c] * (1 + ant[i][0] + ant[i][1])
+            estados[(q, u)] = fila
+
+    return R, X, estados[(n_query, n_update)]
+
+
+def mostrar(titulo, demandas):
+    R, X, fila = mva_exato(demandas, 3, 1)
+    print(titulo)
+    print(f"Tempo de resposta Query: {R[0]:.4f} s")
+    print(f"Tempo de resposta Update: {R[1]:.4f} s")
+    print(f"Vazão Query: {X[0]:.4f} trans/s")
+    print(f"Vazão Update: {X[1]:.4f} trans/s")
     print("Tamanho médio das filas:")
-    nomes = ["CPU", "Disco 1", "Disco 2"]
-    for i in range(3):
-        print(f"  {nomes[i]}: {fila_u[i] + fila_q[i]:.4f}")
+    for nome, f in zip(["CPU", "Disco 1", "Disco 2"], fila):
+        print(f"  {nome}: {f[0] + f[1]:.4f}")
+    print()
 
-print("=== SITUAÇÃO ATUAL ===")
-calcular(0.180, 0.000)
 
-print("\n=== QUERY BALANCEADA ENTRE OS DISCOS ===")
-calcular(0.090, 0.090)
+# [Query, Update] em CPU, Disco 1 e Disco 2
+atual = [[0.105, 0.375], [0.180, 0.480], [0.000, 0.240]]
+balanceado = [[0.105, 0.375], [0.090, 0.480], [0.090, 0.240]]
+
+mostrar("=== SITUAÇÃO ATUAL ===", atual)
+mostrar("=== QUERY BALANCEADA ENTRE OS DISCOS ===", balanceado)
