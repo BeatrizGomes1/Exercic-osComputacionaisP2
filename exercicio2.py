@@ -1,75 +1,44 @@
-
-# Exercicio Computacional 2 - Capitulo 6
+# Exercício Computacional para P2 (2 Questao) - Capítulo 6
 
 taxa_query = 7368 / 1800
 
-demanda_cpu_query = 0.105
-demanda_d1_query = 0.180
-demanda_d2_query = 0.000
-
-demanda_cpu_update = 0.375
-demanda_d1_update = 0.480
-demanda_d2_update = 0.240
-
+d_cpu_up = 0.375
+d_d1_up = 0.480
+d_d2_up = 0.240
 
 def calcular(d1_query, d2_query):
-    demandas_query = [
-        demanda_cpu_query,
-        d1_query,
-        d2_query
-    ]
-
-    demandas_update = [
-        demanda_cpu_update,
-        demanda_d1_update,
-        demanda_d2_update
-    ]
-
-    demanda_efetiva = []
-
+    d_q = [0.105, d1_query, d2_query]
+    d_u = [d_cpu_up, d_d1_up, d_d2_up]
+    
+    d_efetiva = []
     for i in range(3):
-        utilizacao_query = taxa_query * demandas_query[i]
-        demanda = demandas_update[i] / (1 - utilizacao_query)
-        demanda_efetiva.append(demanda)
-
-    resposta_update = sum(demanda_efetiva)
-    vazao_update = 1 / resposta_update
-
-    fila_update = []
-
+        u_q = taxa_query * d_q[i]
+        d_efetiva.append(d_u[i] / (1 - u_q))
+        
+    r_update = sum(d_efetiva)
+    x_update = 1 / r_update
+    
+    fila_u = [x_update * d_efetiva[i] for i in range(3)]
+        
+    r_query = 0.0
+    fila_q = []
     for i in range(3):
-        tamanho = vazao_update * demanda_efetiva[i]
-        fila_update.append(tamanho)
-
-    resposta_query = 0.0
-    fila_query = []
-
-    for i in range(3):
-        utilizacao_query = taxa_query * demandas_query[i]
-
-        resposta_dispositivo = (
-            demandas_query[i] * (1 + fila_update[i])
-            / (1 - utilizacao_query)
-        )
-
-        resposta_query += resposta_dispositivo
-        fila_query.append(taxa_query * resposta_dispositivo)
-
-    print("Tempo de resposta Query:", round(resposta_query, 4), "s")
-    print("Vazao Query:", round(taxa_query, 4), "trans/s")
-    print("Tempo de resposta Update:", round(resposta_update, 4), "s")
-    print("Vazao Update:", round(vazao_update, 4), "trans/s")
-
-    print("Tamanho medio das filas:")
-
+        u_q = taxa_query * d_q[i]
+        r_dev = (d_q[i] * (1 + fila_u[i])) / (1 - u_q)
+        r_query += r_dev
+        fila_q.append(taxa_query * r_dev)
+        
+    print(f"Tempo de resposta Query: {r_query:.4f} s")
+    print(f"Vazão Query: {taxa_query:.4f} trans/s")
+    print(f"Tempo de resposta Update: {r_update:.4f} s")
+    print(f"Vazão Update: {x_update:.4f} trans/s")
+    
+    print("Tamanho médio das filas:")
     nomes = ["CPU", "Disco 1", "Disco 2"]
-
     for i in range(3):
-        total = fila_update[i] + fila_query[i]
-        print(nomes[i], ":", round(total, 4))
+        print(f"  {nomes[i]}: {fila_u[i] + fila_q[i]:.4f}")
 
-
-print("=== SITUACAO ATUAL ===")
+print("=== SITUAÇÃO ATUAL ===")
 calcular(0.180, 0.000)
 
 print("\n=== QUERY BALANCEADA ENTRE OS DISCOS ===")

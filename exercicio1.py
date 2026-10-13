@@ -1,4 +1,4 @@
-# Exercício Computacional 1 - Capítulo 6
+# Exercício Computacional para P2 (1 Questao) - Capítulo 6
 
 # Demandas de serviço [CPU, Disco 1, Disco 2]
 demandas = [
@@ -7,7 +7,6 @@ demandas = [
     [0.000, 0.240]   # Disco 2
 ]
 
-# PARTE 1: MVA Aproximado (3 Queries, 1 Update)
 print("=== PARTE 1: MVA Aproximado (3 Q, 1 U) ===")
 
 n = [3, 1]
@@ -55,9 +54,8 @@ print(f"  Disco 2: {fila[2][0] + fila[2][1]:.4f}")
 print(f"Iterações até convergir: {iteracoes_aprox1}\n")
 
 
-# PARTE 2: Triplicando Update (3 Queries, 3 Updates)
+# Triplicando Update (3 Queries, 3 Updates)
 
-# MVA Exato
 print("=== PARTE 2A: MVA Exato (3 Q, 3 U) ===")
 
 filas_exato = {}
@@ -102,7 +100,6 @@ print(f"  Disco 2: {fila_exata_final[2][0] + fila_exata_final[2][1]:.4f}")
 print(f"Total de estados calculados: {len(filas_exato)}\n")
 
 
-# MVA Aproximado
 print("=== PARTE 2B: MVA Aproximado (3 Q, 3 U) ===")
 
 n_novos = [3, 3]
@@ -146,7 +143,6 @@ print(f"  Disco 2: {fila_ap[2][0] + fila_ap[2][1]:.4f}")
 print(f"Iterações até convergir: {iteracoes_aprox2}\n")
 
 
-# Comparação do esforço
 print("=== COMPARAÇÃO DO ESFORÇO ===")
 print(f"Estados calculados no MVA Exato: {len(filas_exato)}")
 print(f"Iterações no MVA Aproximado: {iteracoes_aprox2}")
