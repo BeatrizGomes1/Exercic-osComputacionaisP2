@@ -1,170 +1,152 @@
+# Exercício Computacional 1 - Capítulo 6
 
-# Exercicio Computacional 1 - Capitulo 6
-# Modelo de duas classes: Query e Update
-
+# Demandas de serviço [CPU, Disco 1, Disco 2]
 demandas = [
     [0.105, 0.375],  # CPU
     [0.180, 0.480],  # Disco 1
     [0.000, 0.240]   # Disco 2
 ]
 
-dispositivos = ["CPU", "Disco 1", "Disco 2"]
-classes = ["Query", "Update"]
+# PARTE 1: MVA Aproximado (3 Queries, 1 Update)
+print("=== PARTE 1: MVA Aproximado (3 Q, 1 U) ===")
 
+n = [3, 1]
+fila = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
+diferenca = 1.0
+iteracoes_aprox1 = 0
 
-# MVA aproximado
-def mva_aproximado(n_query, n_update):
-    n = [n_query, n_update]
-
-    fila = [[0.0, 0.0] for i in range(3)]
-    diferenca = 1
-    iteracoes = 0
-
-    while diferenca > 0.001:
-        fila_antiga = [[fila[i][j] for j in range(2)]
-                       for i in range(3)]
-
-        resposta = [0.0, 0.0]
-        vazao = [0.0, 0.0]
-
+while diferenca > 0.001:
+    fila_antiga = [linha[:] for linha in fila]
+    R = [0.0, 0.0]
+    X = [0.0, 0.0]
+    
+    for c in range(2):
+        if n[c] > 0:
+            for i in range(3):
+                total_f = fila_antiga[i][0] + fila_antiga[i][1]
+                R[c] += demandas[i][c] * (1 + total_f - (fila_antiga[i][c] / n[c]))
+            X[c] = n[c] / R[c]
+    
+    for i in range(3):
         for c in range(2):
             if n[c] > 0:
-                for i in range(3):
-                    total_fila = fila_antiga[i][0] + fila_antiga[i][1]
-                    resposta[c] += demandas[i][c] * (
-                        1 + total_fila - fila_antiga[i][c] / n[c]
-                    )
-
-                vazao[c] = n[c] / resposta[c]
-
-        for i in range(3):
-            for c in range(2):
-                fila[i][c] = vazao[c] * demandas[i][c] * (
-                    1 + fila_antiga[i][0] + fila_antiga[i][1]
-                    - fila_antiga[i][c] / n[c]
-                ) if n[c] > 0 else 0.0
-
-        diferenca = 0
-
-        for i in range(3):
-            for c in range(2):
-                valor = abs(fila[i][c] - fila_antiga[i][c])
-                if valor > diferenca:
-                    diferenca = valor
-
-        iteracoes += 1
-
-    return resposta, vazao, fila, iteracoes
-
-
-# MVA exato
-def mva_exato(n_query, n_update):
-    filas = {}
-
-    resposta = [0.0, 0.0]
-    vazao = [0.0, 0.0]
-
-    for q in range(n_query + 1):
-        for u in range(n_update + 1):
-
-            if q == 0 and u == 0:
-                filas[(q, u)] = [[0.0, 0.0] for i in range(3)]
-                continue
-
-            n = [q, u]
-            resposta = [0.0, 0.0]
-            vazao = [0.0, 0.0]
-
-            for c in range(2):
-                if n[c] > 0:
-                    if c == 0:
-                        fila_anterior = filas[(q - 1, u)]
-                    else:
-                        fila_anterior = filas[(q, u - 1)]
-
-                    for i in range(3):
-                        total_fila = (
-                            fila_anterior[i][0] + fila_anterior[i][1]
-                        )
-                        resposta[c] += demandas[i][c] * (1 + total_fila)
-
-                    vazao[c] = n[c] / resposta[c]
-
-            fila_atual = [[0.0, 0.0] for i in range(3)]
-
-            for i in range(3):
-                for c in range(2):
-                    if n[c] > 0:
-                        if c == 0:
-                            fila_anterior = filas[(q - 1, u)]
-                        else:
-                            fila_anterior = filas[(q, u - 1)]
-
-                        fila_atual[i][c] = (
-                            vazao[c] * demandas[i][c]
-                            * (1 + fila_anterior[i][0]
-                               + fila_anterior[i][1])
-                        )
-
-            filas[(q, u)] = fila_atual
-
-    # Calcula os resultados do estado final
-    fila_final = filas[(n_query, n_update)]
-    resposta = [0.0, 0.0]
-    vazao = [0.0, 0.0]
-
-    for c in range(2):
-        n = [n_query, n_update][c]
-
-        if n > 0:
-            if c == 0:
-                fila_anterior = filas[(n_query - 1, n_update)]
+                total_f = fila_antiga[i][0] + fila_antiga[i][1]
+                fila[i][c] = X[c] * demandas[i][c] * (1 + total_f - (fila_antiga[i][c] / n[c]))
             else:
-                fila_anterior = filas[(n_query, n_update - 1)]
-
-            for i in range(3):
-                total_fila = (
-                    fila_anterior[i][0] + fila_anterior[i][1]
-                )
-                resposta[c] += demandas[i][c] * (1 + total_fila)
-
-            vazao[c] = n / resposta[c]
-
-    return resposta, vazao, fila_final, len(filas)
-
-
-# Exibe os resultados
-def mostrar_resultados(titulo, resultado):
-    resposta, vazao, fila, quantidade = resultado
-
-    print("\n", titulo)
-    print("-" * 45)
-
-    for c in range(2):
-        print(classes[c])
-        print("Tempo de resposta:", round(resposta[c], 4), "segundos")
-        print("Vazao:", round(vazao[c], 4), "transacoes/segundo")
-
-    print("\nTamanho medio das filas:")
-
+                fila[i][c] = 0.0
+                
+    diferenca = 0.0
     for i in range(3):
-        total = fila[i][0] + fila[i][1]
-        print(dispositivos[i], ":", round(total, 4))
+        for c in range(2):
+            diff = abs(fila[i][c] - fila_antiga[i][c])
+            if diff > diferenca:
+                diferenca = diff
+                
+    iteracoes_aprox1 += 1
 
-    print("Estados/iteracoes:", quantidade)
+print(f"Tempo de resposta Query: {R[0]:.4f} s")
+print(f"Tempo de resposta Update: {R[1]:.4f} s")
+print(f"Vazão Query: {X[0]:.4f} trans/s")
+print(f"Vazão Update: {X[1]:.4f} trans/s")
+print("Tamanho das filas nos dispositivos:")
+print(f"  CPU: {fila[0][0] + fila[0][1]:.4f}")
+print(f"  Disco 1: {fila[1][0] + fila[1][1]:.4f}")
+print(f"  Disco 2: {fila[2][0] + fila[2][1]:.4f}")
+print(f"Iterações até convergir: {iteracoes_aprox1}\n")
 
 
-# Parte 1: MVA aproximado com os niveis originais
-resultado1 = mva_aproximado(3, 1)
-mostrar_resultados("MVA aproximado - niveis originais", resultado1)
+# PARTE 2: Triplicando Update (3 Queries, 3 Updates)
 
-# Parte 2: nivel de Update triplicado
-resultado2 = mva_exato(3, 3)
-mostrar_resultados("MVA exato - Update triplicado", resultado2)
+# MVA Exato
+print("=== PARTE 2A: MVA Exato (3 Q, 3 U) ===")
 
-resultado3 = mva_aproximado(3, 3)
-mostrar_resultados("MVA aproximado - Update triplicado", resultado3)
+filas_exato = {}
 
-print("\nComparacao do esforco computacional")
-print("Iteracoes do aproximado:", resultado3[3])
-print("Estados calculados pelo exato:", resultado2[3])
+for q in range(4):
+    for u in range(4):
+        if q == 0 and u == 0:
+            filas_exato[(0, 0)] = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
+            continue
+            
+        R_ex = [0.0, 0.0]
+        X_ex = [0.0, 0.0]
+        
+        for c in range(2):
+            qtd = [q, u][c]
+            if qtd > 0:
+                prev = filas_exato[(q - 1, u)] if c == 0 else filas_exato[(q, u - 1)]
+                for i in range(3):
+                    R_ex[c] += demandas[i][c] * (1 + prev[i][0] + prev[i][1])
+                X_ex[c] = qtd / R_ex[c]
+                
+        nova_fila = [[0.0, 0.0] for _ in range(3)]
+        for i in range(3):
+            for c in range(2):
+                qtd = [q, u][c]
+                if qtd > 0:
+                    prev = filas_exato[(q - 1, u)] if c == 0 else filas_exato[(q, u - 1)]
+                    nova_fila[i][c] = X_ex[c] * demandas[i][c] * (1 + prev[i][0] + prev[i][1])
+                    
+        filas_exato[(q, u)] = nova_fila
+
+fila_exata_final = filas_exato[(3, 3)]
+
+print(f"Tempo de resposta Query: {R_ex[0]:.4f} s")
+print(f"Tempo de resposta Update: {R_ex[1]:.4f} s")
+print(f"Vazão Query: {X_ex[0]:.4f} trans/s")
+print(f"Vazão Update: {X_ex[1]:.4f} trans/s")
+print("Tamanho das filas nos dispositivos:")
+print(f"  CPU: {fila_exata_final[0][0] + fila_exata_final[0][1]:.4f}")
+print(f"  Disco 1: {fila_exata_final[1][0] + fila_exata_final[1][1]:.4f}")
+print(f"  Disco 2: {fila_exata_final[2][0] + fila_exata_final[2][1]:.4f}")
+print(f"Total de estados calculados: {len(filas_exato)}\n")
+
+
+# MVA Aproximado
+print("=== PARTE 2B: MVA Aproximado (3 Q, 3 U) ===")
+
+n_novos = [3, 3]
+fila_ap = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
+diferenca = 1.0
+iteracoes_aprox2 = 0
+
+while diferenca > 0.001:
+    fila_antiga = [linha[:] for linha in fila_ap]
+    R_ap = [0.0, 0.0]
+    X_ap = [0.0, 0.0]
+    
+    for c in range(2):
+        for i in range(3):
+            total_f = fila_antiga[i][0] + fila_antiga[i][1]
+            R_ap[c] += demandas[i][c] * (1 + total_f - (fila_antiga[i][c] / n_novos[c]))
+        X_ap[c] = n_novos[c] / R_ap[c]
+        
+    for i in range(3):
+        for c in range(2):
+            total_f = fila_antiga[i][0] + fila_antiga[i][1]
+            fila_ap[i][c] = X_ap[c] * demandas[i][c] * (1 + total_f - (fila_antiga[i][c] / n_novos[c]))
+            
+    diferenca = 0.0
+    for i in range(3):
+        for c in range(2):
+            diff = abs(fila_ap[i][c] - fila_antiga[i][c])
+            if diff > diferenca:
+                diferenca = diff
+                
+    iteracoes_aprox2 += 1
+
+print(f"Tempo de resposta Query: {R_ap[0]:.4f} s")
+print(f"Tempo de resposta Update: {R_ap[1]:.4f} s")
+print(f"Vazão Query: {X_ap[0]:.4f} trans/s")
+print(f"Vazão Update: {X_ap[1]:.4f} trans/s")
+print("Tamanho das filas nos dispositivos:")
+print(f"  CPU: {fila_ap[0][0] + fila_ap[0][1]:.4f}")
+print(f"  Disco 1: {fila_ap[1][0] + fila_ap[1][1]:.4f}")
+print(f"  Disco 2: {fila_ap[2][0] + fila_ap[2][1]:.4f}")
+print(f"Iterações até convergir: {iteracoes_aprox2}\n")
+
+
+# Comparação do esforço
+print("=== COMPARAÇÃO DO ESFORÇO ===")
+print(f"Estados calculados no MVA Exato: {len(filas_exato)}")
+print(f"Iterações no MVA Aproximado: {iteracoes_aprox2}")
